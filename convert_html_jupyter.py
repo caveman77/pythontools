@@ -21,6 +21,7 @@ def parse_cell_output(div):
             ligne = re.sub('<.*?>', '', ligneavecbalises)
 
             ligne = ligne.replace(u'\u200b', '\n')
+            ligne = ligne.replace(u'\u0d0a', '\n')
 
 
             if ligne != '' :
@@ -31,6 +32,34 @@ def parse_cell_output(div):
                 cell['text'].append(ligne)
 
         return cell
+
+
+def parse_cell_outputPng(div):
+        cell = {} 
+        cell['data'] = { }
+        
+        
+        #text_html = []
+        
+        for item in div.contents:
+            txt = str(item)
+
+            paterns = re.findall('base64,.*?\"',  txt)
+            for pat in paterns:
+                #print("Found 1 img")
+                ligne = pat[7:-1]
+
+                if ligne != '' :
+                    #lignehex = ":".join("{:02x}".format(ord(c)) for c in ligne)
+                    #print(ligne)
+                    
+                    #cell['source'].append(json.dumps(ligne))
+                    text_html = ligne
+                    #print(ligne)
+                    cell['data']["image/png"] = text_html
+
+        return cell
+
 
 def parse_cell_outputHtml(div):
         cell = {} 
@@ -83,6 +112,7 @@ def parse_cell_code(div):
             ligne = re.sub('<.*?>', '', ligneavecbalises)
 
             ligne = ligne.replace(u'\u200b', '\n')
+            ligne = ligne.replace(u'\u0d0a', '\n')
 
 
             if ligne != '' :
@@ -114,10 +144,17 @@ def parse_cell_inout(div):
                     #print('Text Ouput detected')
                     onecellout = parse_cell_output(div2)
                     cell['outputs'].append(onecellout)
+
                 if 'output_subarea' in div2['class'] and 'output_html' in div2['class']:
                     #print('Html Ouput detected')
                     onecellout = parse_cell_outputHtml(div2)
                     cell['outputs'].append(onecellout)
+
+                if 'output_subarea' in div2['class'] and 'output_png' in div2['class']:
+                    #print('Png Ouput detected')
+                    onecellout = parse_cell_outputPng(div2)
+                    cell['outputs'].append(onecellout)
+
                 if 'input_prompt' in div2['class']:
                     #print('Excecution count detected')
                     onecellout = parse_cell_Exec(div2)
