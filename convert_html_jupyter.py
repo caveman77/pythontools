@@ -43,7 +43,8 @@ def parse_cell_outputPng(div):
         
         for item in div.contents:
             txt = str(item)
-
+            txt = txt.replace('\n', '')
+            
             paterns = re.findall('base64,.*?\"',  txt)
             for pat in paterns:
                 #print("Found 1 img")
@@ -134,7 +135,8 @@ def parse_cell_inout(div):
         
         for div2 in div.find_all('div', attrs={'class': ['input_area', 'output_subarea', 'input_prompt' ]}):
             #print(div['aria-label'])
-            if 'input_area' in div2['class'] and div2['aria-label']=='Edit code here':
+            #if 'input_area' in div2['class'] and div2['aria-label']=='Edit code here':
+            if 'input_area' in div2['class']:
                 #print('In Out detected')
                 onecell = parse_cell_code(div2)
                 #cell['source'].append(onecell)
@@ -176,7 +178,7 @@ def parse_cell_markup(div):
             
             #print('ligneavecbalises:', txt)
             ligne = re.sub('<blockquote.*?>', '> ', txt)
-            ligne = re.sub('<ul>', '* ', ligne)
+            ligne = re.sub('<li>', '* ', ligne)
             ligne = re.sub('</?strong>', '**', ligne)
             ligne = re.sub('<h[1-9].*?>', '# ', ligne)
             
@@ -220,8 +222,9 @@ def get_data(soup):
 
                 
 
-        #print('Adding cell', cell)
-        
+        print('.', end='')
+
+    print('.')    
     return create_nb
 
 
@@ -231,30 +234,29 @@ def get_data(soup):
 
 
 
-
-#url = 'https://www.marsja.se/python-manova-made-easy-using-statsmodels/'
-
-url = '02_deepnlp_machine_translation - Jupyter Notebook.htm'
-text=''
-
 import sys
-with open(sys.argv[1]) as filenames:
+
+
+#url = 'C:\\Users\\Christian\\Documents\\New_Job\\Job_2022\\DataScientist\\Formations\\Datascientest\\NLP\\159-Word Embedding\\exam_python4.htm'
+text=''
+#filenamearg=url
+filenamearg=sys.argv[1]
+
+
+with open(filenamearg) as filenames:
     print(filenames.name)
 
     print("nom", filenames.name)
     fhand = open(filenames.name, mode="r", encoding="utf-8")
+    text = fhand.read()
 
-    for line in fhand:
-        line = line.rstrip()
-        text = text + line
-    #print(line)
-
-
+    print('Please wait')
     soup = BeautifulSoup(text, 'lxml')
 
     #get_data(soup, 'post-content')
     create_nb = get_data(soup)
 
+    print('Saving outcome')
     with open(filenames.name + '.ipynb', 'w') as jynotebook:
         jynotebook.write(json.dumps(create_nb))
 
