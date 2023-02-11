@@ -18,7 +18,8 @@ def parse_cell_output(div):
         for div2 in div.find_all('pre'):
             #line = {}
             ligneavecbalises = div2.get_text()
-            ligne = re.sub('<.*?>', '', ligneavecbalises)
+            ligne = ligneavecbalises
+            #ligne = re.sub('<.*?>', '', ligneavecbalises)
 
             ligne = ligne.replace(u'\u200b', '\n')
             ligne = ligne.replace(u'\u0d0a', '\n')
@@ -125,7 +126,7 @@ def parse_cell_code(div):
 
         return source
 
-def parse_cell_inout(div):
+def parse_cell_inout(div, DownloadCode,  DownloadOutput):
         cell = {} 
         cell['metadata'] = {}
         cell['cell_type'] = "code"
@@ -136,28 +137,28 @@ def parse_cell_inout(div):
         for div2 in div.find_all('div', attrs={'class': ['input_area', 'output_subarea', 'input_prompt' ]}):
             #print(div['aria-label'])
             #if 'input_area' in div2['class'] and div2['aria-label']=='Edit code here':
-            if 'input_area' in div2['class']:
+            if 'input_area' in div2['class'] and DownloadCode==True:
                 #print('In Out detected')
                 onecell = parse_cell_code(div2)
                 #cell['source'].append(onecell)
                 cell['source'] = onecell
             else:
-                if 'output_subarea' in div2['class'] and 'output_text' in div2['class']:
+                if 'output_subarea' in div2['class'] and 'output_text' in div2['class'] and DownloadOutput==True:
                     #print('Text Ouput detected')
                     onecellout = parse_cell_output(div2)
                     cell['outputs'].append(onecellout)
 
-                if 'output_subarea' in div2['class'] and 'output_html' in div2['class']:
+                if 'output_subarea' in div2['class'] and 'output_html' in div2['class'] and DownloadOutput==True:
                     #print('Html Ouput detected')
                     onecellout = parse_cell_outputHtml(div2)
                     cell['outputs'].append(onecellout)
 
-                if 'output_subarea' in div2['class'] and 'output_png' in div2['class']:
+                if 'output_subarea' in div2['class'] and 'output_png' in div2['class'] and DownloadOutput==True:
                     #print('Png Ouput detected')
                     onecellout = parse_cell_outputPng(div2)
                     cell['outputs'].append(onecellout)
 
-                if 'input_prompt' in div2['class']:
+                if 'input_prompt' in div2['class'] and DownloadOutput==True:
                     #print('Excecution count detected')
                     onecellout = parse_cell_Exec(div2)
 
@@ -178,6 +179,9 @@ def parse_cell_markup(div):
             
             #print('ligneavecbalises:', txt)
             ligne = re.sub('<blockquote.*?>', '> ', txt)
+            ligne = re.sub('</blockquote>', '\n', ligne)
+            ligne = re.sub('#', '\#', ligne)
+            
             ligne = re.sub('<li>', '* ', ligne)
             ligne = re.sub('</?strong>', '**', ligne)
             ligne = re.sub('<h[1-9].*?>', '# ', ligne)
@@ -197,7 +201,7 @@ def parse_cell_markup(div):
 
         return cell
         
-def get_data(soup):
+def get_data(soup, DownloadMarkup, DownloadCode,  DownloadOutput):
     create_nb = {}  
 
     create_nb['nbformat'] = 4
@@ -212,10 +216,10 @@ def get_data(soup):
         #print(div['aria-label'])
         if 'code_cell' in div['class']:
             #print('In Out detected')
-            cell = parse_cell_inout(div)
+            cell = parse_cell_inout(div, DownloadCode,  DownloadOutput)
             create_nb['cells'].append(cell)
         else:
-            if 'text_cell_render' in div['class']:
+            if 'text_cell_render' in div['class'] and DownloadMarkup==True:
                 #print('Markup detected')
                 cell = parse_cell_markup(div)
                 create_nb['cells'].append(cell)
@@ -237,28 +241,52 @@ def get_data(soup):
 import sys
 
 
-#url = 'C:\\Users\\Christian\\Documents\\New_Job\\Job_2022\\DataScientist\\Formations\\Datascientest\\NLP\\159-Word Embedding\\exam_python4.htm'
-text=''
-#filenamearg=url
-filenamearg=sys.argv[1]
+DownloadMarkup=True
+DownloadCode=True
+DownloadOutput=True
+
+filelist=[]
+for i, arg in enumerate(sys.argv):
+    
+    if i>0:
+        if len(arg) >=2 and arg[0] == '-':
+            param=True      
+
+            if arg[2] == '0' or arg[2] == '0':
+                param=False
+
+            if arg[1] == 'm' or arg[1] == 'M':
+                DownloadMarkup=param
+                print('Switching markup to:', DownloadMarkup)
+
+            elif arg[1] == 'c' or arg[1] == 'C':
+                DownloadCode=param
+                print('Switching code to:', DownloadCode)
+
+            elif arg[1] == 'o' or arg[1] == 'O':
+                DownloadOutput=param
+                print('Switching output to:', DownloadOutput)
+        else:
+            filelist.append(arg)
 
 
-with open(filenamearg) as filenames:
-    print(filenames.name)
+for   filenamearg in     filelist: 
+    with open(filenamearg) as filenames:
+        #print(filenames.name)
 
-    print("nom", filenames.name)
-    fhand = open(filenames.name, mode="r", encoding="utf-8")
-    text = fhand.read()
+        print("managing ", filenames.name)
+        fhand = open(filenames.name, mode="r", encoding="utf-8")
+        text = fhand.read()
 
-    print('Please wait')
-    soup = BeautifulSoup(text, 'lxml')
+        #print('Please wait')
+        soup = BeautifulSoup(text, 'lxml')
 
-    #get_data(soup, 'post-content')
-    create_nb = get_data(soup)
+        #get_data(soup, 'post-content')
+        create_nb = get_data(soup, DownloadMarkup, DownloadCode,  DownloadOutput)
 
-    print('Saving outcome')
-    with open(filenames.name + '.ipynb', 'w') as jynotebook:
-        jynotebook.write(json.dumps(create_nb))
+        #print('Saving outcome')
+        with open(filenames.name + '.ipynb', 'w') as jynotebook:
+            jynotebook.write(json.dumps(create_nb))
 
 
 
