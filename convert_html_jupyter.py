@@ -122,6 +122,7 @@ def parse_cell_code(div):
                 #print(ligne, lignehex)
                 
                 #cell['source'].append(json.dumps(ligne))
+                ligne = ligne + '\n'
                 source.append(ligne)
 
         return source
