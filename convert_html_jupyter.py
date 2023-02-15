@@ -102,11 +102,13 @@ def parse_cell_Exec(div):
 
 
 
-def parse_cell_code(div):
+def parse_cell_code(div, cell_back_ground_wellow):
 
         source = []
         
-        
+        if cell_back_ground_wellow:
+            source.append('#SOL:\n')
+
         #print('find level 1')
         for div2 in div.find_all('pre', attrs={'class': 'CodeMirror-line'}):
             #line = {}
@@ -134,13 +136,23 @@ def parse_cell_inout(div, DownloadCode,  DownloadOutput):
         cell['execution_count'] = None      
         cell['outputs'] = []
         cell['source'] = []
+
+        cell_back_ground_wellow = False
         
         for div2 in div.find_all('div', attrs={'class': ['input_area', 'output_subarea', 'input_prompt' ]}):
             #print(div['aria-label'])
             #if 'input_area' in div2['class'] and div2['aria-label']=='Edit code here':
             if 'input_area' in div2['class'] and DownloadCode==True:
                 #print('In Out detected')
-                onecell = parse_cell_code(div2)
+
+                try:
+                    if div2['style']=="background-color: rgb(255, 254, 240);":
+                        cell_back_ground_wellow= True
+                        cell['metadata']['function'] = "Yellow"
+                except KeyError:
+                    pass
+
+                onecell = parse_cell_code(div2, cell_back_ground_wellow)
                 #cell['source'].append(onecell)
                 cell['source'] = onecell
             else:
